@@ -25,13 +25,31 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.sp
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
+import androidx.glance.appwidget.SizeMode
+import androidx.glance.appwidget.cornerRadius
+import androidx.glance.layout.Alignment
+import com.example.glanceexample.R
 import java.util.Locale
 
 
 class StockAppWidget : GlanceAppWidget() {
 
     private var job: Job? = null
+
+
+    companion object {
+        private val smallMode = DpSize(100.dp, 80.dp)
+        private val mediumMode = DpSize(120.dp, 120.dp)
+    }
+
+    override val sizeMode: SizeMode = SizeMode.Responsive(
+        setOf(smallMode, mediumMode)
+    )
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         if (job == null) {
@@ -53,7 +71,11 @@ class StockAppWidget : GlanceAppWidget() {
     @Composable
     fun GlanceContent() {
         val stateCount by PriceDataRepo.currentPrice.collectAsState()
-        Small(stateCount)
+        val size = LocalSize.current
+        when (size) {
+            smallMode -> Small(stateCount)
+            mediumMode -> Medium(stateCount)
+        }
     }
 
     @Composable
@@ -68,6 +90,29 @@ class StockAppWidget : GlanceAppWidget() {
         }
     }
 
+    @Composable
+    private fun Medium(stateCount: Float) {
+        Column(
+            horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .cornerRadius(15.dp)
+                .background(GlanceTheme.colors.background)
+                .padding(8.dp)
+        ) {
+            StockDisplay(stateCount)
+            Image(
+                provider = ImageProvider(
+                    if (PriceDataRepo.change > 0) R.drawable.baseline_trending_up_24
+                    else R.drawable.outline_align_flex_start_24
+                ),
+                contentDescription = "Arrow Image",
+                modifier = GlanceModifier
+                    .fillMaxSize()
+                    .padding(20.dp)
+            )
+        }
+    }
 
     @Composable
     private fun StockDisplay(stateCount: Float) {
